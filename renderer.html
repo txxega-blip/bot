@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Tx Publicidad Bot</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #111;
+      color: #fff;
+      margin: 0;
+      display: flex;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    /* Splash */
+    #splash {
+      position: fixed;
+      inset: 0;
+      background: #000;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      animation: fadeOut 1s ease 3.2s forwards;
+    }
+    #splash img {
+      width: 180px;
+      animation: rotateIn 1s ease forwards, pulse 2s infinite 1s;
+    }
+    #splash p {
+      color: #e50914;
+      margin-top: 15px;
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); filter: drop-shadow(0 0 10px #e50914); }
+      50% { transform: scale(1.1); filter: drop-shadow(0 0 25px #e50914); }
+      100% { transform: scale(1); filter: drop-shadow(0 0 10px #e50914); }
+    }
+    @keyframes rotateIn {
+      from { transform: scale(0.5) rotate(-180deg); opacity: 0; }
+      to { transform: scale(1) rotate(0); opacity: 1; }
+    }
+    @keyframes fadeOut {
+      to { opacity: 0; visibility: hidden; }
+    }
+
+    /* Sidebar */
+    .sidebar {
+      width: 260px;
+      background: #000;
+      padding: 15px;
+      border-right: 2px solid #e50914;
+      display: flex;
+      flex-direction: column;
+    }
+    .sidebar h2 {
+      text-align: center;
+      color: #e50914;
+      margin-bottom: 15px;
+    }
+    #clientes {
+      flex: 1;
+      overflow-y: auto;
+      padding-right: 5px;
+    }
+    .cliente {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      margin-bottom: 6px;
+      background: #1b1b1b;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    .cliente:hover { background: #333; }
+    .cliente img {
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+    .cliente-texto {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      overflow: hidden;
+    }
+    .cliente-nombre {
+      font-weight: bold;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .cliente-ultimo {
+      font-size: 12px;
+      color: #aaa;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* Chat */
+    .chat {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      background: #1a1a1a;
+    }
+    .chat-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px;
+      background: #000;
+      border-bottom: 2px solid #e50914;
+    }
+    .chat-header img {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+    }
+    .chat-header h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+
+    /* Logs */
+    .logs {
+      flex: 1;
+      overflow-y: auto;
+      padding: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      scroll-behavior: smooth;
+    }
+    .msg {
+      max-width: 70%;
+      padding: 10px 14px 18px 14px;
+      border-radius: 18px;
+      position: relative;
+      word-wrap: break-word;
+      line-height: 1.4;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+      animation: popIn 0.2s ease;
+    }
+    .cliente-msg {
+      align-self: flex-start;
+      background: #2a2a2a;
+      border-bottom-left-radius: 4px;
+    }
+    .bot-msg {
+      align-self: flex-end;
+      background: #e50914;
+      border-bottom-right-radius: 4px;
+    }
+    @keyframes popIn {
+      from { transform: scale(0.85); opacity: 0; }
+      to { transform: scale(1); opacity: 1; }
+    }
+    .meta {
+      font-size: 11px;
+      color: #ddd;
+      opacity: 0.8;
+      position: absolute;
+      bottom: 4px;
+      right: 10px;
+    }
+
+    /* Footer / Estado */
+    .status {
+      background: #000;
+      padding: 10px;
+      border-top: 2px solid #e50914;
+      text-align: center;
+      font-size: 14px;
+    }
+    #status {
+      margin-bottom: 8px;
+      font-weight: bold;
+    }
+    #status.esperando { color: #f1c40f; }
+    #status.ok { color: #2ecc71; }
+    #status.error { color: #e74c3c; }
+    #qrcode img {
+      width: 180px;
+      margin-top: 5px;
+    }
+  </style>
+</head>
+<body>
+  <!-- Splash -->
+  <div id="splash">
+    <img src="assets/logo.png" alt="Tx Publicidad Logo" />
+    <p>Iniciando Tx Bot...</p>
+  </div>
+
+  <!-- Layout -->
+  <div class="sidebar">
+    <h2>📋 Clientes</h2>
+    <div id="clientes"></div>
+  </div>
+  <div class="chat">
+    <div class="chat-header">
+      <img id="avatarCliente" src="assets/logo.png" alt="Avatar" />
+      <h3 id="nombreCliente">Selecciona un cliente</h3>
+    </div>
+    <div class="logs" id="logs"></div>
+    <div class="status">
+      <div id="status" class="esperando">⏳ Esperando conexión...</div>
+      <div id="qrcode"></div>
+    </div>
+  </div>
+
+  <!-- Audios -->
+  <audio id="sound-in" src="assets/msg-in.mp3"></audio>
+  <audio id="sound-out" src="assets/msg-out.mp3"></audio>
+
+  <script>
+    const { ipcRenderer } = require("electron");
+    const logsDiv = document.getElementById("logs");
+    const statusDiv = document.getElementById("status");
+    const clientesDiv = document.getElementById("clientes");
+    const avatarCliente = document.getElementById("avatarCliente");
+    const nombreClienteHeader = document.getElementById("nombreCliente");
+
+    const mensajesPorCliente = {};
+    const nombresClientes = {};
+    let clienteActivo = null;
+
+    function getHora() {
+      return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    }
+
+    function generarAvatar(nombre) {
+      const inicial = (nombre?.[0] || "C").toUpperCase();
+      const canvas = document.createElement("canvas");
+      canvas.width = 80; canvas.height = 80;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#e50914"; ctx.beginPath();
+      ctx.arc(40, 40, 40, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = "#fff"; ctx.font = "bold 40px Segoe UI";
+      ctx.textAlign = "center"; ctx.textBaseline = "middle";
+      ctx.fillText(inicial, 40, 45);
+      return canvas.toDataURL();
+    }
+
+    function renderLogs(clienteId) {
+      clienteActivo = clienteId;
+      logsDiv.innerHTML = "";
+      nombreClienteHeader.textContent = nombresClientes[clienteId] || clienteId;
+      avatarCliente.src = generarAvatar(nombresClientes[clienteId]);
+
+      if (!mensajesPorCliente[clienteId]) return;
+      mensajesPorCliente[clienteId].forEach((m) => {
+        const div = document.createElement("div");
+        div.classList.add("msg", m.tipo === "cliente" ? "cliente-msg" : "bot-msg");
+        div.innerHTML = `<b>${m.nombre}:</b> ${m.texto}
+          <div class="meta">${m.hora || ""}</div>`;
+        logsDiv.appendChild(div);
+      });
+
+      logsDiv.scrollTop = logsDiv.scrollHeight;
+    }
+
+    function renderClientes() {
+      clientesDiv.innerHTML = "";
+      Object.keys(mensajesPorCliente).forEach((id) => {
+        const div = document.createElement("div");
+        div.classList.add("cliente");
+
+        // Avatar
+        const avatar = document.createElement("img");
+        avatar.src = generarAvatar(nombresClientes[id] || id);
+        div.appendChild(avatar);
+
+        // Texto: nombre + último mensaje
+        const textContainer = document.createElement("div");
+        textContainer.classList.add("cliente-texto");
+
+        const spanNombre = document.createElement("span");
+        spanNombre.classList.add("cliente-nombre");
+        spanNombre.textContent = nombresClientes[id] || id;
+        textContainer.appendChild(spanNombre);
+
+        const ultimo = mensajesPorCliente[id][mensajesPorCliente[id].length - 1];
+        if (ultimo) {
+          const spanMsg = document.createElement("span");
+          spanMsg.classList.add("cliente-ultimo");
+          spanMsg.textContent = ultimo.texto;
+          textContainer.appendChild(spanMsg);
+        }
+
+        div.appendChild(textContainer);
+        div.onclick = () => renderLogs(id);
+        clientesDiv.appendChild(div);
+      });
+    }
+
+    function playSound(tipo) {
+      if (tipo === "cliente") document.getElementById("sound-in").play();
+      if (tipo === "bot") document.getElementById("sound-out").play();
+    }
+
+    // 📡 Eventos desde main.js / bot.js
+    ipcRenderer.on("qr", (event, qrDataUrl) => {
+      const qrDiv = document.getElementById("qrcode");
+      qrDiv.innerHTML = `<img src="${qrDataUrl}" alt="QR WhatsApp" />`;
+      statusDiv.innerText = "📲 Escanea el QR con tu WhatsApp";
+      statusDiv.className = "esperando";
+    });
+
+    ipcRenderer.on("listo", () => {
+      statusDiv.innerText = "✅ Bot conectado a WhatsApp";
+      statusDiv.className = "ok";
+      document.getElementById("qrcode").innerHTML = "";
+    });
+
+    ipcRenderer.on("mensaje-bot", (event, data) => {
+      const { id, tipo, texto, nombre } = data;
+      if (!mensajesPorCliente[id]) mensajesPorCliente[id] = [];
+      mensajesPorCliente[id].push({ tipo, texto, nombre, hora: getHora() });
+      if (nombre) nombresClientes[id] = nombre;
+      renderClientes();
+      if (clienteActivo === id) renderLogs(id);
+      playSound(tipo);
+    });
+
+    // 📡 Nuevo: Estado del cliente
+    ipcRenderer.on("estado-cliente", (event, data) => {
+      const { id, estado } = data;
+      if (!mensajesPorCliente[id]) mensajesPorCliente[id] = [];
+      mensajesPorCliente[id].push({
+        tipo: "bot",
+        texto: `📌 Estado: ${estado}`,
+        nombre: "Tx Bot",
+        hora: getHora()
+      });
+      renderClientes();
+      if (clienteActivo === id) {
+        renderLogs(id);
+        nombreClienteHeader.textContent = (nombresClientes[id] || id) + ` (${estado})`;
+      }
+    });
+
+    // Ocultar splash
+    window.addEventListener("load", () => {
+      setTimeout(() => {
+        document.getElementById("splash").style.display = "none";
+      }, 3300);
+    });
+  </script>
+</body>
+</html>

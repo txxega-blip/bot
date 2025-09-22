@@ -1,0 +1,45 @@
+{
+  "name": "bot-publicidad",
+  "version": "1.0.0",
+  "description": "Tx Publicidad - Bot de WhatsApp con menú, pagos y OpenAI",
+  "author": "Tx Publicidad <soporte@txpublicidad.com>",
+  "main": "main.js",
+  "type": "module",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron .",
+    "build": "electron-builder",
+    "dist": "electron-builder"
+  },
+  "dependencies": {
+    "dotenv": "^16.3.1",
+    "openai": "^4.0.0",
+    "qrcode": "^1.5.3",
+    "qrcode-terminal": "^0.12.0",
+    "whatsapp-web.js": "^1.23.0"
+  },
+  "build": {
+    "appId": "com.txpublicidad.bot",
+    "productName": "Tx Publicidad Bot",
+    "copyright": "Copyright © 2025 Tx Publicidad",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*"
+    ],
+    "win": {
+      "target": [
+        "msi",
+        "nsis"
+      ],
+      "icon": "assets/icon.ico"
+    }
+  },
+  "devDependencies": {
+    "electron": "^38.1.2",
+    "electron-builder": "^26.0.12"
+  },
+  "keywords": [],
+  "license": "ISC"
+}
